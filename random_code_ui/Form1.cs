@@ -53,14 +53,13 @@ namespace random_code_ui
             var result = MessageBox.Show(msg, "생성하기", MessageBoxButtons.YesNo);
             if (result == DialogResult.Yes)
             {
-                btnGen.Enabled = false;
+                SetControl(false);
 
                 ThreadWorker tw = new ThreadWorker();
                 tw.DoWork += Generate;
                 tw.OnCompleted += Tw_OnCompleted;
                 tw.OnProcessChanged += Tw_OnProcessChanged;
                 tw.Run();
-
 
             }
         }
@@ -82,7 +81,7 @@ namespace random_code_ui
             this.Invoke(new MethodInvoker(delegate
             {
                 MessageBox.Show("완료!");
-                btnGen.Enabled = true;
+                SetControl(true);
                 btnGen.Text = "생성";
             }));
         }
@@ -110,6 +109,13 @@ namespace random_code_ui
 
         }
 
+        private void SetControl(bool flag)
+        {
+            foreach (Control c in this.Controls)
+            {
+                c.Enabled = flag;
+            }
+        }
 
         public void DoRandomDic(object sender)
         {
@@ -132,7 +138,7 @@ namespace random_code_ui
                 {
                     map.Add(sb.ToString(), null);
 
-                    if (map.Count % 20 == 0)
+                    if (map.Count % 100 == 0)
                     {
                         // 보고
                         float percent = (float)map.Count / (float)WantedCount;
