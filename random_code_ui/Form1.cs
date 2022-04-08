@@ -55,21 +55,44 @@ namespace random_code_ui
             {
                 btnGen.Enabled = false;
 
-                Thread trd = new Thread(new ThreadStart(this.Generate));
-                trd.IsBackground = true;
-                trd.Start();
+                ThreadWorker tw = new ThreadWorker();
+                tw.DoWork += Generate;
+                tw.OnCompleted += Tw_OnCompleted;
+                tw.OnProcessChanged += Tw_OnProcessChanged;
+                tw.Run();
 
 
             }
         }
 
+        private void Tw_OnProcessChanged(object sender, ProgressEventArgs e)
+        {
+            this.Invoke(new MethodInvoker(delegate
+            {
+                this.btnGen.Text = (e.Percent * 100).ToString("#,###.00") + "%";
+                Application.DoEvents();
+            }));
+        }
+
+        private void Tw_OnCompleted(object sender, EventArgs e)
+        {
+            ThreadWorker tw = ((ThreadWorker)sender);
+            tw.Dispose();
+
+            this.Invoke(new MethodInvoker(delegate
+            {
+                MessageBox.Show("완료!");
+                btnGen.Enabled = true;
+                btnGen.Text = "생성";
+            }));
+        }
 
         private static Dictionary<string, object> map = new Dictionary<string, object>();
 
-        private void Generate()
+        private void Generate(object sender, EventArgs e)
         {
             map.Clear();
-            DoRandomDic();
+            DoRandomDic(sender);
 
             using (var fs = new FileStream(this.lbSaveFile.Text, FileMode.Create, FileAccess.Write, FileShare.None, 1024 * 1024, FileOptions.Asynchronous | FileOptions.SequentialScan))
             {
@@ -82,18 +105,15 @@ namespace random_code_ui
                 }
             }
 
-            this.Invoke(new MethodInvoker(delegate
-            {
-                MessageBox.Show("완료!");
-                btnGen.Enabled = true;
-            }));
+            ThreadWorker tw = ((ThreadWorker)sender);
+            tw.ReportProgress(1);
 
         }
 
 
-        public void DoRandomDic()
+        public void DoRandomDic(object sender)
         {
-
+            ThreadWorker tw = ((ThreadWorker)sender);
             Random r = new Random(Guid.NewGuid().GetHashCode());
 
             string AllowedChars = this.txtAllowedText.Text;
@@ -109,7 +129,22 @@ namespace random_code_ui
                 }
                 string code = sb.ToString();
                 if (!map.ContainsKey(code))
+                {
                     map.Add(sb.ToString(), null);
+
+                    if (map.Count % 20 == 0)
+                    {
+                        // 보고
+                        float percent = (float)map.Count / (float)WantedCount;
+                        if (percent > 50)
+                        {
+                            // 파일 생성이 필요하므로 100을 안채우도록 한다.
+                            percent = percent - (float)0.1;
+                        }
+                        tw.ReportProgress(percent);
+                    }
+
+                }
             }
         }
 
