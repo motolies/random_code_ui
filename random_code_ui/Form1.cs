@@ -36,10 +36,18 @@ namespace random_code_ui
 
         private void btnGen_Click(object sender, EventArgs e)
         {
+
+            long motherTree = (long)Math.Pow((int)txtDigit.Value, txtAllowedText.Text.Length);
+
+            if (motherTree < (long)this.txtTotal.Value)
+            {
+                MessageBox.Show("모수가 더 작습니다.");
+                return;
+            }
+
             string msg =
 @"동작 중엔 멈출 수 없습니다. 
-생성 갯수가 크면 중복체크 때문에 오래걸립니다. (5천만개 생성에 40초 내외)
-PC의 메모리가 부족하면 오류가 나면서 멈출 수 있습니다. (메모리 16기가 이상 권장)
+모수대비 생성갯수의 비율이 크면 오래 걸립니다. 
 그래도 생성하시겠습니까?";
 
             var result = MessageBox.Show(msg, "생성하기", MessageBoxButtons.YesNo);
